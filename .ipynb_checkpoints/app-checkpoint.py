@@ -14,13 +14,12 @@ resnet = InceptionResnetV1(pretrained='vggface2').eval().to(device)
 
 DB_FILE = "ngit_ace_db.pkl"
 
-# Load image function
-def load_image(img_path):
-    """Extract face embedding from an image file."""
-    img = Image.open(img_path).convert('RGB')
+# Extract embedding from PIL image
+def get_embedding(img):
+    """Extract face embedding from a PIL image."""
     face = mtcnn(img)
     if face is None:
-        raise ValueError("No face detected in image: " + img_path)
+        return None
     face = face.unsqueeze(0).to(device)
     with torch.no_grad():
         emb = resnet(face)
@@ -45,7 +44,7 @@ def cosine_similarity(a, b):
     b = b / (np.linalg.norm(b) + 1e-8)
     return float(np.dot(a, b))
 
-#ROUTERS
+# ROUTERS
 @app.route('/')
 def home():
     return render_template("index.html")
@@ -68,9 +67,9 @@ def register_face():
         return jsonify({"error": "Name and image are required"}), 400
 
     img = Image.open(file).convert('RGB')
-    emb = load_image(img)
+    emb = get_embedding(img)
     if emb is None:
-        return jsonify({"error": "No face detected"}), 400
+        return render_template("register.html", message="❌ No face detected")
 
     db = load_db()
     if name not in db:
@@ -87,7 +86,7 @@ def recognize_face():
         return jsonify({"error": "Image is required"}), 400
 
     img = Image.open(file).convert('RGB')
-    emb = load_image(img)
+    emb = get_embedding(img)
     if emb is None:
         return render_template("recognize.html", message="❌ No face detected")
 
