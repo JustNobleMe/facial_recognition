@@ -1,7 +1,7 @@
 flask
-torch
-torchvision
-facenet-pytorch
-pillow
-numpy
+torch==2.2.2
+torchvision==0.17.2
+facenet-pytorch==2.5.3
+Pillow==10.2.0
+numpy==1.26.4
 gunicorn
