@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Face Recognition 2</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <h2>Face Recognition System 2</h2>
+
+  <div class="container">
+    <!-- Camera Recognition -->
+    <div class="card">
+      <h3>Live Camera</h3>
+      <div id="camera-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="overlay"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="text-center mt-3">
+      <a href="/" class="btn btn-outline-secondary">⬅ Back to Home</a>
+    </div>
+
+  <script src="{{ url_for('static', filename='js/recognize.js') }}"></script>
+</body>
+</html>

@@ -4,6 +4,7 @@ from PIL import Image
 import torch
 import numpy as np
 import pickle
+import io
 import os
 
 app = Flask(__name__)
@@ -44,6 +45,25 @@ def cosine_similarity(a, b):
     b = b / (np.linalg.norm(b) + 1e-8)
     return float(np.dot(a, b))
 
+# recognition logic
+def recognize_from_embedding(emb):
+    db = load_db()
+    if not db:
+        return None, 0.0
+
+    best_match, best_score = None, -1
+    for name, embeddings in db.items():
+        for saved_emb in embeddings:
+            score = cosine_similarity(emb, saved_emb)
+            if score > best_score:
+                best_score = score
+                best_match = name
+
+    threshold = 0.6
+    if best_score >= threshold:
+        return best_match, best_score
+    return None, best_score
+
 # ROUTERS
 @app.route('/')
 def home():
@@ -56,6 +76,10 @@ def register_form():
 @app.route('/recognize_form')
 def recognize_form():
     return render_template("recognize.html")
+
+@app.route('/live')
+def recognize_form_live():
+    return render_template("recongize2.html")
 
 # API ROUTES
 @app.route('/register', methods=['POST'])
@@ -90,23 +114,41 @@ def recognize_face():
     if emb is None:
         return render_template("recognize.html", message="❌ No face detected")
 
-    db = load_db()
-    if not db:
-        return render_template("recognize.html", message="❌ Database is empty")
-
-    best_match, best_score = None, -1
-    for name, embeddings in db.items():
-        for saved_emb in embeddings:
-            score = cosine_similarity(emb, saved_emb)
-            if score > best_score:
-                best_score = score
-                best_match = name
-
-    threshold = 0.6
-    if best_score >= threshold:
+    best_match, best_score = recognize_from_embedding(emb)
+    if best_match:
         return render_template("recognize.html", message=f"✅ Recognized as: {best_match} (similarity={best_score:.2f})")
     else:
         return render_template("recognize.html", message="❌ Unknown face")
+
+# New: Live recognition from camera frames
+@app.route('/recognize_live', methods=['POST'])
+def recognize_live():
+    file = request.files.get("frame")
+    if not file:
+        return jsonify({"error": "Frame is required"}), 400
+
+    img = Image.open(io.BytesIO(file.read())).convert('RGB')
+    emb = get_embedding(img)
+    if emb is None:
+        return jsonify({"name": None})
+
+    best_match, best_score = recognize_from_embedding(emb)
+    return jsonify({"name": best_match, "similarity": best_score})
+
+# New: Upload recognition (AJAX)
+@app.route('/recognize_upload', methods=['POST'])
+def recognize_upload():
+    file = request.files.get("file")
+    if not file:
+        return jsonify({"error": "File is required"}), 400
+
+    img = Image.open(io.BytesIO(file.read())).convert('RGB')
+    emb = get_embedding(img)
+    if emb is None:
+        return jsonify({"name": None})
+
+    best_match, best_score = recognize_from_embedding(emb)
+    return jsonify({"name": best_match, "similarity": best_score})
 
 if __name__ == "__main__":
     app.run(debug=True)
