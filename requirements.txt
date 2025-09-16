@@ -1,0 +1,7 @@
+flask
+torch
+torchvision
+facenet-pytorch
+pillow
+numpy
+gunicorn
