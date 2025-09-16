@@ -1,3 +1,4 @@
+--no-cache-dir
 flask
 torch
 torchvision
